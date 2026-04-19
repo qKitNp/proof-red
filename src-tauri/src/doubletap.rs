@@ -1,74 +1,86 @@
-//! macOS double-tap-Control detector backed by a CGEventTap.
+//! Cross-platform double-tap-Right-Shift detector.
 //!
-//! Runs in a dedicated thread, listens to FlagsChanged / KeyDown / mouse-down
-//! events globally, and emits "doubletap-control" to the frontend when the
-//! user taps the Control key twice within DOUBLE_TAP_WINDOW_MS without any
-//! intervening keyboard or mouse activity.
+//! On macOS uses a CGEventTap on a dedicated thread (requires Accessibility
+//! permission). On Windows and Linux (X11) uses `rdev::listen`. Emits
+//! "doubletap-rshift" to the frontend when Right Shift is tapped twice within
+//! DOUBLE_TAP_WINDOW_MS with no intervening keyboard or mouse activity.
 
-use std::sync::Mutex;
-use std::time::Instant;
-
-use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};
-use core_graphics::event::{
-    CGEventFlags, CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement,
-    CGEventType, EventField, KeyCode,
-};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Runtime};
 
 const DOUBLE_TAP_WINDOW_MS: u128 = 300;
 const PERMISSION_TOAST_EVENT: &str = "doubletap-permission-missing";
-const TRIGGER_EVENT: &str = "doubletap-control";
-
-struct State {
-    last_ctrl_down: Option<Instant>,
-    clean: bool,
-}
+const TRIGGER_EVENT: &str = "doubletap-rshift";
 
 pub fn start<R: Runtime>(app: AppHandle<R>) {
     std::thread::Builder::new()
-        .name("doubletap-control".into())
-        .spawn(move || run(app))
+        .name("doubletap-rshift".into())
+        .spawn(move || imp::run(app))
         .expect("failed to spawn doubletap thread");
 }
 
-fn run<R: Runtime>(app: AppHandle<R>) {
-    let state: Mutex<State> = Mutex::new(State {
-        last_ctrl_down: None,
-        clean: true,
-    });
+#[cfg(target_os = "macos")]
+mod imp {
+    use super::*;
+    use std::sync::Mutex;
+    use std::time::Instant;
 
-    let app_for_cb = app.clone();
-    let tap_result = CGEventTap::new(
-        CGEventTapLocation::HID,
-        CGEventTapPlacement::HeadInsertEventTap,
-        CGEventTapOptions::ListenOnly,
-        vec![
-            CGEventType::FlagsChanged,
-            CGEventType::KeyDown,
-            CGEventType::LeftMouseDown,
-            CGEventType::RightMouseDown,
-        ],
-        move |_proxy, etype, event| {
-            let Ok(mut s) = state.lock() else { return None };
+    use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};
+    use core_graphics::event::{
+        CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement, CGEventType,
+        EventField, KeyCode,
+    };
+    use tauri::Emitter;
 
-            match etype {
-                CGEventType::FlagsChanged => {
-                    let keycode =
-                        event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u64;
-                    let is_control = keycode == KeyCode::CONTROL as u64
-                        || keycode == KeyCode::RIGHT_CONTROL as u64;
-                    if !is_control {
-                        s.clean = false;
-                        s.last_ctrl_down = None;
-                        return None;
-                    }
-                    let down = event
-                        .get_flags()
-                        .contains(CGEventFlags::CGEventFlagControl);
-                    if down {
+    struct State {
+        last_rshift_down: Option<Instant>,
+        clean: bool,
+        rshift_held: bool,
+    }
+
+    pub fn run<R: Runtime>(app: AppHandle<R>) {
+        let state: Mutex<State> = Mutex::new(State {
+            last_rshift_down: None,
+            clean: true,
+            rshift_held: false,
+        });
+
+        let app_for_cb = app.clone();
+        let tap_result = CGEventTap::new(
+            CGEventTapLocation::HID,
+            CGEventTapPlacement::HeadInsertEventTap,
+            CGEventTapOptions::ListenOnly,
+            vec![
+                CGEventType::FlagsChanged,
+                CGEventType::KeyDown,
+                CGEventType::LeftMouseDown,
+                CGEventType::RightMouseDown,
+            ],
+            move |_proxy, etype, event| {
+                let Ok(mut s) = state.lock() else { return None };
+
+                match etype {
+                    CGEventType::FlagsChanged => {
+                        let keycode =
+                            event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE)
+                                as u64;
+                        if keycode != KeyCode::RIGHT_SHIFT as u64 {
+                            // Any other modifier change (including left shift)
+                            // dirties the sequence.
+                            s.clean = false;
+                            s.last_rshift_down = None;
+                            s.rshift_held = false;
+                            return None;
+                        }
+                        if s.rshift_held {
+                            // This is the release half of the transition.
+                            s.rshift_held = false;
+                            return None;
+                        }
+                        // Press edge of right shift.
+                        s.rshift_held = true;
                         let now = Instant::now();
                         let fired = matches!(
-                            s.last_ctrl_down,
+                            s.last_rshift_down,
                             Some(prev)
                                 if s.clean
                                     && now.duration_since(prev).as_millis()
@@ -76,49 +88,119 @@ fn run<R: Runtime>(app: AppHandle<R>) {
                         );
                         if fired {
                             let _ = app_for_cb.emit(TRIGGER_EVENT, ());
-                            s.last_ctrl_down = None;
+                            s.last_rshift_down = None;
                         } else {
-                            s.last_ctrl_down = Some(now);
+                            s.last_rshift_down = Some(now);
                         }
                         s.clean = true;
                     }
+                    CGEventType::KeyDown
+                    | CGEventType::LeftMouseDown
+                    | CGEventType::RightMouseDown => {
+                        s.clean = false;
+                        s.last_rshift_down = None;
+                    }
+                    _ => {}
                 }
-                CGEventType::KeyDown
-                | CGEventType::LeftMouseDown
-                | CGEventType::RightMouseDown => {
+                None
+            },
+        );
+
+        let tap = match tap_result {
+            Ok(t) => t,
+            Err(()) => {
+                eprintln!(
+                    "[doubletap] CGEventTapCreate failed (Accessibility permission missing?)"
+                );
+                let _ = app.emit(PERMISSION_TOAST_EVENT, ());
+                return;
+            }
+        };
+
+        let loop_source = match tap.mach_port.create_runloop_source(0) {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("[doubletap] create_runloop_source failed");
+                return;
+            }
+        };
+        let current = CFRunLoop::get_current();
+        unsafe {
+            current.add_source(&loop_source, kCFRunLoopCommonModes);
+        }
+        tap.enable();
+        println!("[doubletap] event tap installed; waiting for double-tap Right Shift");
+
+        CFRunLoop::run_current();
+    }
+}
+
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+mod imp {
+    use super::*;
+    use std::sync::Mutex;
+    use std::time::Instant;
+
+    use rdev::{listen, Button, Event, EventType, Key};
+    use tauri::Emitter;
+
+    struct State {
+        last_rshift_down: Option<Instant>,
+        clean: bool,
+        rshift_held: bool,
+    }
+
+    pub fn run<R: Runtime>(app: AppHandle<R>) {
+        let state: Mutex<State> = Mutex::new(State {
+            last_rshift_down: None,
+            clean: true,
+            rshift_held: false,
+        });
+
+        let app_for_cb = app.clone();
+        let callback = move |event: Event| {
+            let Ok(mut s) = state.lock() else { return };
+
+            match event.event_type {
+                EventType::KeyPress(Key::ShiftRight) => {
+                    if s.rshift_held {
+                        return;
+                    }
+                    s.rshift_held = true;
+                    let now = Instant::now();
+                    let fired = matches!(
+                        s.last_rshift_down,
+                        Some(prev)
+                            if s.clean
+                                && now.duration_since(prev).as_millis() <= DOUBLE_TAP_WINDOW_MS
+                    );
+                    if fired {
+                        let _ = app_for_cb.emit(TRIGGER_EVENT, ());
+                        s.last_rshift_down = None;
+                    } else {
+                        s.last_rshift_down = Some(now);
+                    }
+                    s.clean = true;
+                }
+                EventType::KeyRelease(Key::ShiftRight) => {
+                    s.rshift_held = false;
+                }
+                EventType::KeyPress(_)
+                | EventType::ButtonPress(Button::Left)
+                | EventType::ButtonPress(Button::Right)
+                | EventType::ButtonPress(Button::Middle) => {
                     s.clean = false;
-                    s.last_ctrl_down = None;
+                    s.last_rshift_down = None;
                 }
                 _ => {}
             }
-            None
-        },
-    );
+        };
 
-    let tap = match tap_result {
-        Ok(t) => t,
-        Err(()) => {
-            eprintln!(
-                "[doubletap] CGEventTapCreate failed (Accessibility permission missing?)"
-            );
+        if let Err(err) = listen(callback) {
+            eprintln!("[doubletap] rdev::listen failed: {:?}", err);
             let _ = app.emit(PERMISSION_TOAST_EVENT, ());
             return;
         }
-    };
-
-    let loop_source = match tap.mach_port.create_runloop_source(0) {
-        Ok(s) => s,
-        Err(_) => {
-            eprintln!("[doubletap] create_runloop_source failed");
-            return;
-        }
-    };
-    let current = CFRunLoop::get_current();
-    unsafe {
-        current.add_source(&loop_source, kCFRunLoopCommonModes);
+        println!("[doubletap] listener installed; waiting for double-tap Right Shift");
     }
-    tap.enable();
-    println!("[doubletap] event tap installed; waiting for double-tap Control");
-
-    CFRunLoop::run_current();
 }

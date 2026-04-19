@@ -2,7 +2,6 @@ use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-#[cfg(target_os = "macos")]
 mod doubletap;
 
 #[derive(serde::Serialize)]
@@ -118,14 +117,9 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![capture_selection, replace_selection]);
 
-    #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
-
     builder
         .setup(|app| {
-            #[cfg(target_os = "macos")]
             doubletap::start(app.handle().clone());
-            let _ = app;
             Ok(())
         })
         .run(tauri::generate_context!())
