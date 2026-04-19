@@ -15,7 +15,16 @@ export default function App() {
 
   useEffect(() => {
     load();
-    registerHotkey();
+    let cleanup: (() => void) | null = null;
+    let cancelled = false;
+    registerHotkey().then((fn) => {
+      if (cancelled) fn();
+      else cleanup = fn;
+    });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, [load]);
 
   return (

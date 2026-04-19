@@ -49,13 +49,13 @@ const handler = (e: ShortcutEvent) => {
   if (e.state === "Pressed") void onTrigger();
 };
 
-export async function registerHotkey() {
+export async function registerHotkey(): Promise<() => void> {
   if (isMac()) {
-    await listen("doubletap-control", () => {
+    const offTrigger = await listen("doubletap-control", () => {
       console.log("[hotkey] doubletap-control");
       void onTrigger();
     });
-    await listen("doubletap-permission-missing", () => {
+    const offPerm = await listen("doubletap-permission-missing", () => {
       useToasts.getState().push({
         id: "doubletap-permission-missing",
         tone: "error",
@@ -66,13 +66,19 @@ export async function registerHotkey() {
       });
     });
     console.log("[hotkey] listening for double-tap Control");
-    return;
+    return () => {
+      offTrigger();
+      offPerm();
+    };
   }
 
   try {
     if (await isRegistered(FALLBACK_SHORTCUT)) await unregister(FALLBACK_SHORTCUT);
     await register(FALLBACK_SHORTCUT, handler);
     console.log("[hotkey] registered", FALLBACK_SHORTCUT);
+    return () => {
+      void unregister(FALLBACK_SHORTCUT).catch(() => {});
+    };
   } catch (e) {
     console.error("[hotkey] registerHotkey failed", e);
     const msg = e instanceof Error ? e.message : String(e);
@@ -83,5 +89,6 @@ export async function registerHotkey() {
       description: `${msg}. Another app may already use this shortcut.`,
       durationMs: 0,
     });
+    return () => {};
   }
 }
