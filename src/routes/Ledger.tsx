@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { seedProofs, type Proof } from "../lib/seed";
+import type { Proof } from "../lib/db";
+import { useProofs } from "../lib/useProofs";
 import { ProofEntry } from "../components/ProofEntry";
 import { StatsCard } from "../components/StatsCard";
 
@@ -18,7 +19,8 @@ function groupByDay(proofs: Proof[]) {
 }
 
 export function Home() {
-  const groups = useMemo(() => groupByDay(seedProofs), []);
+  const proofs = useProofs((s) => s.proofs);
+  const groups = useMemo(() => groupByDay(proofs), [proofs]);
 
   return (
     <div className="flex gap-8">
