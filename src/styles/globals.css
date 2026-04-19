@@ -1,49 +1,34 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #f4efe6;
-  --color-paper-deep: #ebe3d4;
-  --color-paper-edge: #ddd2bc;
-  --color-ink: #1a1714;
-  --color-ink-soft: #5e564e;
-  --color-ink-faint: #8a7f72;
-  --color-red: #b3282d;
-  --color-red-deep: #8c1d22;
+  --color-bg: #f6f5f2;
+  --color-sidebar: #efede8;
+  --color-surface: #ffffff;
+  --color-border: #e6e3dd;
+  --color-border-soft: #efede8;
+  --color-text: #1a1714;
+  --color-text-soft: #5e564e;
+  --color-text-faint: #9a9287;
+  --color-accent: #b3282d;
+  --color-accent-soft: #f3e1e2;
 
-  --color-ink-bg: #141210;
-  --color-ink-bg-deep: #0d0b09;
-  --color-ink-type: #ede4d3;
-  --color-ink-type-soft: #a69c8a;
-  --color-ink-red: #c1333a;
-
-  --font-display: "Fraunces", "Newsreader", ui-serif, Georgia, serif;
-  --font-body: "Newsreader", ui-serif, Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
-
-  --ease-ink: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
 }
 
 @layer base {
   :root {
-    --paper: var(--color-paper);
-    --paper-deep: var(--color-paper-deep);
-    --ink: var(--color-ink);
-    --ink-soft: var(--color-ink-soft);
-    --ink-faint: var(--color-ink-faint);
-    --red: var(--color-red);
-    --edge: var(--color-paper-edge);
+    --bg: var(--color-bg);
+    --sidebar: var(--color-sidebar);
+    --surface: var(--color-surface);
+    --border: var(--color-border);
+    --border-soft: var(--color-border-soft);
+    --text: var(--color-text);
+    --text-soft: var(--color-text-soft);
+    --text-faint: var(--color-text-faint);
+    --accent: var(--color-accent);
+    --accent-soft: var(--color-accent-soft);
     color-scheme: light;
-  }
-
-  html.ink {
-    --paper: var(--color-ink-bg);
-    --paper-deep: var(--color-ink-bg-deep);
-    --ink: var(--color-ink-type);
-    --ink-soft: var(--color-ink-type-soft);
-    --ink-faint: #6e6558;
-    --red: var(--color-ink-red);
-    --edge: #2a2520;
-    color-scheme: dark;
   }
 
   html, body, #root {
@@ -52,66 +37,17 @@
 
   body {
     margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-optical-sizing: auto;
-    font-feature-settings: "liga", "kern", "onum";
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  /* paper grain overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.08  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/></svg>");
-    mix-blend-mode: multiply;
-    opacity: 0.35;
-  }
-
-  html.ink body::before {
-    mix-blend-mode: screen;
-    opacity: 0.18;
-  }
-
-  /* notebook rule for empty states */
-  .notebook-rule {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 31px,
-      color-mix(in srgb, var(--ink-faint) 35%, transparent) 31px,
-      color-mix(in srgb, var(--ink-faint) 35%, transparent) 32px
-    );
-  }
-
   ::selection {
-    background: color-mix(in srgb, var(--red) 25%, transparent);
-    color: var(--ink);
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--text);
   }
-}
-
-.letterpress {
-  text-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 60%, white 40%),
-               0 -1px 0 color-mix(in srgb, var(--ink) 14%, transparent);
-}
-
-.small-caps {
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-}
-
-/* ink-dry fade-in */
-@keyframes ink-dry {
-  0%   { opacity: 0; filter: blur(6px); transform: translateY(3px); }
-  60%  { opacity: 0.9; filter: blur(0.6px); }
-  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
-}
-
-.ink-dry {
-  animation: ink-dry 0.8s var(--ease-ink) both;
 }

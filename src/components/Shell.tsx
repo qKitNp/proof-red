@@ -1,97 +1,82 @@
 import type { ReactNode } from "react";
+import {
+  Home as HomeIcon,
+  BookMarked,
+  Settings as SettingsIcon,
+  User,
+  HelpCircle,
+} from "lucide-react";
 import { useUI, type Route } from "../lib/store";
 
-const nav: { key: Route; label: string; hint: string }[] = [
-  { key: "ledger", label: "Ledger", hint: "01" },
-  { key: "settings", label: "Settings", hint: "02" },
-  { key: "account", label: "Account", hint: "03" },
+type NavItem = { key: Route; label: string; Icon: typeof HomeIcon };
+
+const nav: NavItem[] = [
+  { key: "home", label: "Home", Icon: HomeIcon },
+  { key: "settings", label: "Settings", Icon: SettingsIcon },
+  { key: "account", label: "Account", Icon: User },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
   const { route, setRoute } = useUI();
 
   return (
-    <div className="relative h-full grid grid-cols-[220px_1fr] text-[var(--ink)]">
-      {/* left rail */}
-      <aside className="relative z-10 flex flex-col justify-between border-r border-[var(--edge)] px-7 py-8 bg-[color-mix(in_srgb,var(--paper)_92%,var(--paper-deep))]">
+    <div className="h-full grid grid-cols-[240px_1fr] text-[var(--text)]">
+      <aside className="flex flex-col justify-between border-r border-[var(--border)] bg-[var(--sidebar)] px-4 py-5">
         <div>
-          <Wordmark />
-          <nav className="mt-14 flex flex-col gap-1">
-            {nav.map((n) => {
-              const active = route === n.key;
+          <div className="flex items-center gap-2 px-2 mb-7">
+            <div className="text-[17px] font-semibold tracking-tight">
+              proof<span className="text-[var(--accent)]">·</span>red
+            </div>
+            <span className="text-[10.5px] px-2 py-[2px] rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)]">
+              Basic
+            </span>
+          </div>
+
+          <nav className="flex flex-col gap-[2px]">
+            {nav.map(({ key, label, Icon }) => {
+              const active = route === key;
               return (
                 <button
-                  key={n.key}
-                  onClick={() => setRoute(n.key)}
-                  className="group relative text-left flex items-baseline gap-3 py-1.5 cursor-pointer"
+                  key={key}
+                  onClick={() => setRoute(key)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-[13.5px] transition-colors cursor-pointer ${
+                    active
+                      ? "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]"
+                      : "text-[var(--text-soft)] hover:bg-[var(--surface)]/60 border border-transparent"
+                  }`}
                 >
-                  <span
-                    className={`font-mono text-[10px] tracking-[0.18em] ${
-                      active ? "text-[var(--red)]" : "text-[var(--ink-faint)]"
-                    }`}
-                  >
-                    {n.hint}
-                  </span>
-                  <span
-                    className={`font-display text-[18px] tracking-tight transition-colors ${
-                      active
-                        ? "text-[var(--ink)]"
-                        : "text-[var(--ink-soft)] group-hover:text-[var(--ink)]"
-                    }`}
-                    style={{ fontVariationSettings: "'opsz' 36, 'wght' 420" }}
-                  >
-                    {n.label}
-                  </span>
-                  {active && (
-                    <span className="absolute -left-7 top-1/2 h-[18px] w-[3px] -translate-y-1/2 bg-[var(--red)]" />
-                  )}
+                  <Icon size={16} strokeWidth={1.75} />
+                  <span>{label}</span>
                 </button>
               );
             })}
           </nav>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <StatusDot />
-          <div className="font-mono text-[10px] leading-[1.6] text-[var(--ink-faint)]">
-            <div>shortcut</div>
-            <div className="text-[var(--ink-soft)]">⌘⇧P</div>
-          </div>
+        <div className="flex flex-col gap-[2px]">
+          <SidebarFoot Icon={BookMarked} label="Shortcut  ⌘⇧P" />
+          <SidebarFoot Icon={HelpCircle} label="Help" />
         </div>
       </aside>
 
-      {/* content */}
-      <main className="relative z-0 h-full overflow-y-auto">
-        <div className="mx-auto max-w-[720px] px-10 pt-12 pb-24">{children}</div>
+      <main className="h-full overflow-y-auto">
+        <div className="max-w-[1100px] mx-auto px-10 pt-10 pb-20">{children}</div>
       </main>
     </div>
   );
 }
 
-function Wordmark() {
+function SidebarFoot({
+  Icon,
+  label,
+}: {
+  Icon: typeof HomeIcon;
+  label: string;
+}) {
   return (
-    <div className="select-none">
-      <div
-        className="font-display text-[30px] leading-none tracking-tight letterpress"
-        style={{ fontVariationSettings: "'opsz' 48, 'wght' 500" }}
-      >
-        proof<span className="text-[var(--red)]">·</span>red
-      </div>
-      <div className="mt-2 small-caps text-[10px] text-[var(--ink-faint)]">
-        a proofreader at rest
-      </div>
-    </div>
-  );
-}
-
-function StatusDot() {
-  return (
-    <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--ink-soft)]">
-      <span className="relative inline-flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--red)] opacity-40 animate-ping" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--red)]" />
-      </span>
-      <span className="small-caps tracking-[0.22em]">on duty</span>
+    <div className="flex items-center gap-3 px-3 py-2 text-[12.5px] text-[var(--text-faint)]">
+      <Icon size={15} strokeWidth={1.75} />
+      <span>{label}</span>
     </div>
   );
 }

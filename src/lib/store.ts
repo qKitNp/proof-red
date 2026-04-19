@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Route = "ledger" | "settings" | "account";
+export type Route = "home" | "settings" | "account";
 
 type UIState = {
   route: Route;
@@ -8,6 +8,6 @@ type UIState = {
 };
 
 export const useUI = create<UIState>((set) => ({
-  route: "ledger",
+  route: "home",
   setRoute: (route) => set({ route }),
 }));
