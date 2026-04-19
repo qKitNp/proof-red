@@ -1,4 +1,5 @@
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+use tauri::{Manager, PhysicalPosition};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -120,6 +121,17 @@ pub fn run() {
     builder
         .setup(|app| {
             doubletap::start(app.handle().clone());
+            if let Some(overlay) = app.get_webview_window("overlay") {
+                if let Ok(Some(monitor)) = overlay.current_monitor() {
+                    let size = monitor.size();
+                    let scale = monitor.scale_factor();
+                    let w = 220.0 * scale;
+                    let h = 56.0 * scale;
+                    let x = (size.width as f64 - w) / 2.0;
+                    let y = size.height as f64 - h - (32.0 * scale);
+                    let _ = overlay.set_position(PhysicalPosition::new(x, y));
+                }
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

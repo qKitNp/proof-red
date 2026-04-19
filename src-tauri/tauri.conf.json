@@ -12,14 +12,31 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "proof-red",
         "width": 800,
         "height": 600
+      },
+      {
+        "label": "overlay",
+        "url": "index.html?window=overlay",
+        "width": 220,
+        "height": 56,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "focus": false,
+        "visible": false,
+        "shadow": false,
+        "acceptFirstMouse": false
       }
     ],
     "security": {
       "csp": null
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,

@@ -50,4 +50,10 @@
     background: color-mix(in srgb, var(--accent) 22%, transparent);
     color: var(--text);
   }
+
+  html.overlay-window,
+  body.overlay-window,
+  body.overlay-window #root {
+    background: transparent !important;
+  }
 }

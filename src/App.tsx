@@ -8,6 +8,7 @@ import { Account } from "./routes/Account";
 import { useUI } from "./lib/store";
 import { useProofs } from "./lib/useProofs";
 import { registerHotkey } from "./lib/hotkey";
+import { registerOverlayBridge } from "./lib/overlay";
 
 export default function App() {
   const route = useUI((s) => s.route);
@@ -21,9 +22,11 @@ export default function App() {
       if (cancelled) fn();
       else cleanup = fn;
     });
+    const offOverlay = registerOverlayBridge();
     return () => {
       cancelled = true;
       cleanup?.();
+      offOverlay();
     };
   }, [load]);
 
