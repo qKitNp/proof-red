@@ -54,7 +54,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex flex-col gap-[2px]">
-          <SidebarFoot Icon={BookMarked} label="Shortcut  ⌘⇧P" />
+          <SidebarFoot Icon={BookMarked} label="Shortcut  ⌃⌃ (double-tap Control)" />
           <SidebarFoot Icon={HelpCircle} label="Help" />
         </div>
       </aside>

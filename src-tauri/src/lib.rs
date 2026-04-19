@@ -2,6 +2,9 @@ use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
+#[cfg(target_os = "macos")]
+mod doubletap;
+
 #[derive(serde::Serialize)]
 pub struct Capture {
     app_name: String,
@@ -120,6 +123,8 @@ pub fn run() {
 
     builder
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            doubletap::start(app.handle().clone());
             let _ = app;
             Ok(())
         })

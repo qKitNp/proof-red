@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Shell } from "./components/Shell";
+import { Toasts } from "./components/Toasts";
+import { ProcessingSpinner } from "./components/ProcessingSpinner";
 import { Home } from "./routes/Ledger";
 import { Settings } from "./routes/Settings";
 import { Account } from "./routes/Account";
@@ -17,10 +19,14 @@ export default function App() {
   }, [load]);
 
   return (
-    <Shell>
-      {route === "home" && <Home />}
-      {route === "settings" && <Settings />}
-      {route === "account" && <Account />}
-    </Shell>
+    <>
+      <Shell>
+        {route === "home" && <Home />}
+        {route === "settings" && <Settings />}
+        {route === "account" && <Account />}
+      </Shell>
+      <ProcessingSpinner />
+      <Toasts />
+    </>
   );
 }

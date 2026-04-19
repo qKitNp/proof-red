@@ -24,8 +24,8 @@ function wordsToChars(a: string, b: string) {
   const lineArray: string[] = [""];
   const lineHash = new Map<string, number>();
 
-  const encode = (text: string) => {
-    const tokens = text.match(/(\s+|[^\s]+)/g) ?? [];
+  const encode = (text: string | undefined) => {
+    const tokens = String(text ?? "").match(/(\s+|[^\s]+)/g) ?? [];
     let out = "";
     for (const t of tokens) {
       let idx = lineHash.get(t);

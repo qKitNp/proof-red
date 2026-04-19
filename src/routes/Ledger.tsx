@@ -31,7 +31,8 @@ export function Home() {
           <div>
             <div className="text-[15px] font-medium">Proofread anywhere you write</div>
             <div className="text-[13px] text-[var(--text-soft)] mt-1 max-w-[46ch]">
-              Select any text, press ⌘⇧P, and proof·red replaces it with a corrected version.
+              Select any text, double-tap ⌃ (Control), and proof·red replaces it with a corrected
+              version.
             </div>
           </div>
           <button className="shrink-0 text-[13px] px-3.5 py-2 rounded-md border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--sidebar)] cursor-pointer">

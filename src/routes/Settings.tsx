@@ -10,13 +10,15 @@ export function Settings() {
 
       <Section title="Shortcut">
         <Row label="Proofread selection">
-          <div className="flex items-center gap-1.5">
-            <Kbd>⌘</Kbd>
-            <Kbd>⇧</Kbd>
-            <Kbd>P</Kbd>
-            <button className="ml-3 text-[12px] text-[var(--text-faint)] hover:text-[var(--accent)]">
-              change
-            </button>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1.5">
+              <Kbd>⌃</Kbd>
+              <span className="text-[11px] text-[var(--text-faint)]">then</span>
+              <Kbd>⌃</Kbd>
+            </div>
+            <div className="text-[11px] text-[var(--text-faint)]">
+              Double-tap Control within 300ms
+            </div>
           </div>
         </Row>
         <Row label="Undo last proof">

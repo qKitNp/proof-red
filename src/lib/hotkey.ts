@@ -1,14 +1,26 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
   register,
   unregister,
   isRegistered,
+  type ShortcutEvent,
 } from "@tauri-apps/plugin-global-shortcut";
 import { useProofs } from "./useProofs";
+import { useToasts } from "./store";
 
-const SHORTCUT = "CmdOrCtrl+Shift+J";
+/** Fallback shortcut for non-mac platforms. macOS uses double-tap Control. */
+const FALLBACK_SHORTCUT = "Ctrl+Alt+Shift+Semicolon";
 
 type Capture = { app_name: string; text: string };
+
+function isMac(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const p = (navigator as Navigator & { userAgentData?: { platform?: string } })
+    .userAgentData?.platform;
+  if (p) return p.toLowerCase().includes("mac");
+  return /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
+}
 
 async function onTrigger() {
   let capture: Capture;
@@ -33,15 +45,43 @@ async function onTrigger() {
   }
 }
 
+const handler = (e: ShortcutEvent) => {
+  if (e.state === "Pressed") void onTrigger();
+};
+
 export async function registerHotkey() {
-  try {
-    if (await isRegistered(SHORTCUT)) await unregister(SHORTCUT);
-    await register(SHORTCUT, (e) => {
-      console.log("[hotkey] event", e);
-      if (e.state === "Pressed") void onTrigger();
+  if (isMac()) {
+    await listen("doubletap-control", () => {
+      console.log("[hotkey] doubletap-control");
+      void onTrigger();
     });
-    console.log("[hotkey] registered", SHORTCUT);
+    await listen("doubletap-permission-missing", () => {
+      useToasts.getState().push({
+        id: "doubletap-permission-missing",
+        tone: "error",
+        title: "Accessibility permission needed",
+        description:
+          "proof·red needs Accessibility access to detect the double-tap Control shortcut. Open System Settings -> Privacy & Security -> Accessibility and enable proof·red, then restart the app.",
+        durationMs: 0,
+      });
+    });
+    console.log("[hotkey] listening for double-tap Control");
+    return;
+  }
+
+  try {
+    if (await isRegistered(FALLBACK_SHORTCUT)) await unregister(FALLBACK_SHORTCUT);
+    await register(FALLBACK_SHORTCUT, handler);
+    console.log("[hotkey] registered", FALLBACK_SHORTCUT);
   } catch (e) {
     console.error("[hotkey] registerHotkey failed", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    useToasts.getState().push({
+      id: "hotkey-register-failed",
+      tone: "error",
+      title: `Couldn't register ${FALLBACK_SHORTCUT}`,
+      description: `${msg}. Another app may already use this shortcut.`,
+      durationMs: 0,
+    });
   }
 }

@@ -6,6 +6,8 @@ export type ProofreadRequest = {
   screenshot?: string;
 };
 
+type ProofreadResponse = { proofread_text: string };
+
 export async function proofread(req: ProofreadRequest): Promise<{ corrected: string }> {
   if (!BASE_URL) throw new Error("VITE_PROOFREAD_BASE_URL not set");
   const res = await fetch(`${BASE_URL}/proofread`, {
@@ -20,5 +22,6 @@ export async function proofread(req: ProofreadRequest): Promise<{ corrected: str
   if (!res.ok) {
     throw new Error(`proofread failed: ${res.status} ${res.statusText}`);
   }
-  return res.json();
+  const data = (await res.json()) as ProofreadResponse;
+  return { corrected: data.proofread_text };
 }
