@@ -31,7 +31,7 @@ export function Home() {
           <div>
             <div className="text-[15px] font-medium">Proofread anywhere you write</div>
             <div className="text-[13px] text-[var(--text-soft)] mt-1 max-w-[46ch]">
-              Select any text, double-tap ⌃ (Control), and proof·red replaces it with a corrected
+              Select any text, double-tap ⇧ (Right Shift), and proof·red replaces it with a corrected
               version.
             </div>
           </div>

@@ -12,12 +12,12 @@ export function Settings() {
         <Row label="Proofread selection">
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-1.5">
-              <Kbd>⌃</Kbd>
+              <Kbd>⇧</Kbd>
               <span className="text-[11px] text-[var(--text-faint)]">then</span>
-              <Kbd>⌃</Kbd>
+              <Kbd>⇧</Kbd>
             </div>
             <div className="text-[11px] text-[var(--text-faint)]">
-              Double-tap Control within 300ms
+              Double-tap Right Shift within 300ms
             </div>
           </div>
         </Row>
@@ -46,15 +46,64 @@ export function Settings() {
       </Section>
 
       <Section title="Custom dictionary">
-        <p className="text-[13px] text-[var(--text-soft)] max-w-[52ch]">
-          Words and phrases proof·red will leave untouched. One per line.
-        </p>
-        <textarea
-          defaultValue={"Anthropic\nwisprflow\nproof·red\nKitN"}
-          className="mt-3 w-full min-h-[140px] rounded-md bg-[var(--surface)] border border-[var(--border)] p-3 font-mono text-[12.5px] text-[var(--text)] outline-none focus:border-[var(--text-faint)] resize-y"
-        />
+        <CustomDictionary />
       </Section>
     </div>
+  );
+}
+
+function CustomDictionary() {
+  const [words, setWords] = useState<string[]>([]);
+  const [input, setInput] = useState("");
+
+  const add = (raw: string) => {
+    const word = raw.trim().replace(/,+$/, "").trim();
+    if (word && !words.includes(word)) setWords((w) => [...w, word]);
+    setInput("");
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); add(input); }
+  };
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.endsWith(",")) { add(val); } else { setInput(val); }
+  };
+
+  return (
+    <>
+      <div className="px-5 py-4 min-h-[80px] flex flex-wrap gap-2 items-start">
+        {words.length === 0 && (
+          <span className="text-[12px] text-[var(--text-faint)] select-none">
+            No words yet — add one below
+          </span>
+        )}
+        {words.map((w) => (
+          <span
+            key={w}
+            className="inline-flex items-center gap-1.5 bg-[var(--bg)] border border-[var(--border)] rounded-full px-2.5 py-0.5 text-[12px] font-mono text-[var(--text)]"
+          >
+            {w}
+            <button
+              onClick={() => setWords((ws) => ws.filter((x) => x !== w))}
+              className="text-[var(--text-faint)] hover:text-[var(--text)] leading-none cursor-pointer"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <div className="px-5 py-3">
+        <input
+          value={input}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          placeholder="Add a word or phrase…"
+          className="w-full bg-transparent text-[13px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none"
+        />
+      </div>
+    </>
   );
 }
 

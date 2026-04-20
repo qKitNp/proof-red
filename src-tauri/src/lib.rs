@@ -68,6 +68,19 @@ async fn capture_selection(app: tauri::AppHandle) -> Result<Capture, String> {
 }
 
 #[tauri::command]
+async fn select_all_and_capture(app: tauri::AppHandle) -> Result<Capture, String> {
+    let app_name = frontmost_app();
+    let clip = app.clipboard();
+    let _ = clip.write_text("");
+    send_mod_key(&app, 'a')?;
+    std::thread::sleep(std::time::Duration::from_millis(80));
+    send_mod_key(&app, 'c')?;
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let text = clip.read_text().unwrap_or_default();
+    Ok(Capture { app_name, text })
+}
+
+#[tauri::command]
 async fn replace_selection(app: tauri::AppHandle, text: String) -> Result<(), String> {
     let clip = app.clipboard();
     let prev = clip.read_text().ok();
@@ -116,7 +129,7 @@ pub fn run() {
                 .add_migrations("sqlite:proofs.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![capture_selection, replace_selection]);
+        .invoke_handler(tauri::generate_handler![capture_selection, select_all_and_capture, replace_selection]);
 
     builder
         .setup(|app| {

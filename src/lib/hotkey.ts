@@ -13,8 +13,27 @@ async function onTrigger() {
     console.error("capture_selection failed", e);
     return;
   }
-  const text = capture.text?.trim();
-  if (!text) return;
+  let text = capture.text?.trim();
+  if (!text) {
+    try {
+      capture = await invoke<Capture>("select_all_and_capture");
+    } catch (e) {
+      console.error("select_all_and_capture failed", e);
+      return;
+    }
+    text = capture.text?.trim();
+    if (!text) return;
+    if (capture.text.length >= 2000) {
+      useToasts.getState().push({
+        id: "proofread-too-long",
+        tone: "error",
+        title: "Text too long",
+        description: "Select a shorter passage (under 2000 characters) to proofread.",
+        durationMs: 4000,
+      });
+      return;
+    }
+  }
 
   const appName = capture.app_name || "unknown";
   const proof = await useProofs.getState().submit({ appName, text: capture.text });
