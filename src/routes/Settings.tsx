@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from "../lib/auth";
+import { startCheckout, openPortal, type Plan } from "../lib/billing";
 
 export function Settings() {
   const [autostart, setAutostart] = useState(true);
@@ -7,6 +9,8 @@ export function Settings() {
   return (
     <div className="max-w-[720px]">
       <h1 className="text-[24px] font-medium tracking-tight">Settings</h1>
+
+      <BillingSection />
 
       <Section title="Shortcut">
         <Row label="Proofread selection">
@@ -104,6 +108,117 @@ function CustomDictionary() {
         />
       </div>
     </>
+  );
+}
+
+function BillingSection() {
+  const { isPro, subscription } = useAuth();
+  const [busy, setBusy] = useState<Plan | "portal" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleCheckout(plan: Plan) {
+    setBusy(plan);
+    setError(null);
+    try {
+      await startCheckout(plan);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handlePortal() {
+    setBusy("portal");
+    setError(null);
+    try {
+      await openPortal();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const periodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString([], {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-[13px] font-medium text-[var(--text-soft)] uppercase tracking-[0.08em] mb-4">
+        Billing
+      </h2>
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] divide-y divide-[var(--border)]">
+        {isPro ? (
+          <div className="px-5 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-[13.5px] font-medium text-[var(--text)]">
+                  Pro plan
+                  <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)]">
+                    Active
+                  </span>
+                </div>
+                {periodEnd && (
+                  <div className="text-[12px] text-[var(--text-soft)] mt-0.5">
+                    Renews {periodEnd}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handlePortal}
+                disabled={busy === "portal"}
+                className="shrink-0 text-[12.5px] px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--sidebar)] cursor-pointer disabled:opacity-50"
+              >
+                {busy === "portal" ? "Opening…" : "Manage subscription"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="px-5 py-4 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-[13.5px] font-medium text-[var(--text)]">Monthly</div>
+                <div className="text-[12px] text-[var(--text-soft)] mt-0.5">$2 / month</div>
+              </div>
+              <button
+                onClick={() => handleCheckout("pro_monthly")}
+                disabled={busy !== null}
+                className="shrink-0 text-[12.5px] px-3 py-1.5 rounded-md bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer disabled:opacity-50 transition-opacity"
+              >
+                {busy === "pro_monthly" ? "Opening…" : "Upgrade"}
+              </button>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-[13.5px] font-medium text-[var(--text)]">
+                  Yearly
+                  <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)]">
+                    Save 17%
+                  </span>
+                </div>
+                <div className="text-[12px] text-[var(--text-soft)] mt-0.5">$20 / year</div>
+              </div>
+              <button
+                onClick={() => handleCheckout("pro_yearly")}
+                disabled={busy !== null}
+                className="shrink-0 text-[12.5px] px-3 py-1.5 rounded-md bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer disabled:opacity-50 transition-opacity"
+              >
+                {busy === "pro_yearly" ? "Opening…" : "Upgrade"}
+              </button>
+            </div>
+          </>
+        )}
+        {error && (
+          <div className="px-5 py-3 text-[12px] text-red-500">{error}</div>
+        )}
+      </div>
+    </section>
   );
 }
 

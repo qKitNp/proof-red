@@ -38,6 +38,13 @@
     },
     "macOSPrivateApi": true
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["proofred"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

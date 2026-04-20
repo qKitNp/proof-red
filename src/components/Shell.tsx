@@ -5,8 +5,10 @@ import {
   Settings as SettingsIcon,
   User,
   HelpCircle,
+  LogOut,
 } from "lucide-react";
 import { useUI, type Route } from "../lib/store";
+import { useAuth } from "../lib/auth";
 
 type NavItem = { key: Route; label: string; Icon: typeof HomeIcon };
 
@@ -18,6 +20,7 @@ const nav: NavItem[] = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const { route, setRoute } = useUI();
+  const { user, isPro, signOut } = useAuth();
 
   return (
     <div className="h-full grid grid-cols-[240px_1fr] text-[var(--text)]">
@@ -28,7 +31,7 @@ export function Shell({ children }: { children: ReactNode }) {
               proof<span className="text-[var(--accent)]">·</span>red
             </div>
             <span className="text-[10.5px] px-2 py-[2px] rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)]">
-              Basic
+              {isPro ? "Pro" : "Basic"}
             </span>
           </div>
 
@@ -56,6 +59,20 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="flex flex-col gap-[2px]">
           <SidebarFoot Icon={BookMarked} label="Shortcut  ⇧⇧ (double-tap Right Shift)" />
           <SidebarFoot Icon={HelpCircle} label="Help" />
+          {user && (
+            <div className="mt-2 pt-2 border-t border-[var(--border)]">
+              <div className="px-3 py-1 text-[11.5px] text-[var(--text-faint)] truncate">
+                {user.user_metadata?.full_name ?? user.email}
+              </div>
+              <button
+                onClick={signOut}
+                className="w-full flex items-center gap-3 px-3 py-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer"
+              >
+                <LogOut size={14} strokeWidth={1.75} />
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 

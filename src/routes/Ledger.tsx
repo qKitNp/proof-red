@@ -3,6 +3,7 @@ import type { Proof } from "../lib/db";
 import { useProofs } from "../lib/useProofs";
 import { ProofEntry } from "../components/ProofEntry";
 import { StatsCard } from "../components/StatsCard";
+import { useAuth } from "../lib/auth";
 
 function groupByDay(proofs: Proof[]) {
   const groups = new Map<string, Proof[]>();
@@ -21,11 +22,13 @@ function groupByDay(proofs: Proof[]) {
 export function Home() {
   const proofs = useProofs((s) => s.proofs);
   const groups = useMemo(() => groupByDay(proofs), [proofs]);
+  const { user } = useAuth();
+  const name = user?.user_metadata?.full_name ?? user?.email ?? "there";
 
   return (
     <div className="flex gap-8">
       <div className="flex-1 min-w-0">
-        <h1 className="text-[24px] font-medium tracking-tight">Welcome back, Pranjal</h1>
+        <h1 className="text-[24px] font-medium tracking-tight">Welcome back, {name}</h1>
 
         <section className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 flex items-center justify-between gap-6">
           <div>

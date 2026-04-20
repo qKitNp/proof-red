@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { Overlay } from "./components/Overlay";
+import { AuthProvider } from "./lib/auth";
 import "./styles/globals.css";
 
 const isOverlay =
@@ -13,5 +14,7 @@ if (isOverlay) {
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>{isOverlay ? <Overlay /> : <App />}</React.StrictMode>,
+  <React.StrictMode>
+    {isOverlay ? <Overlay /> : <AuthProvider><App /></AuthProvider>}
+  </React.StrictMode>,
 );

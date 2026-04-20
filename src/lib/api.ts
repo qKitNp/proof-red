@@ -1,3 +1,5 @@
+import { supabase } from "./supabase";
+
 const BASE_URL = import.meta.env.VITE_PROOFREAD_BASE_URL as string | undefined;
 
 export type ProofreadRequest = {
@@ -10,9 +12,14 @@ type ProofreadResponse = { proofread_text: string };
 
 export async function proofread(req: ProofreadRequest): Promise<{ corrected: string }> {
   if (!BASE_URL) throw new Error("VITE_PROOFREAD_BASE_URL not set");
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
   const res = await fetch(`${BASE_URL}/proofread`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({
       app_name: req.appName,
       to_proofread: req.text,

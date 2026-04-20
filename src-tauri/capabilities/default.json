@@ -18,6 +18,8 @@
     "sql:allow-load",
     "sql:allow-close",
     "clipboard-manager:allow-read-text",
-    "clipboard-manager:allow-write-text"
+    "clipboard-manager:allow-write-text",
+    "deep-link:default",
+    "deep-link:allow-get-current"
   ]
 }
