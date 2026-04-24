@@ -80,6 +80,24 @@ async fn select_all_and_capture(app: tauri::AppHandle) -> Result<Capture, String
     Ok(Capture { app_name, text })
 }
 
+#[cfg(target_os = "macos")]
+#[link(name = "ApplicationServices", kind = "framework")]
+extern "C" {
+    fn AXIsProcessTrusted() -> bool;
+}
+
+#[tauri::command]
+fn check_accessibility_permission() -> bool {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        AXIsProcessTrusted()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
 #[tauri::command]
 async fn replace_selection(app: tauri::AppHandle, text: String) -> Result<(), String> {
     let clip = app.clipboard();
@@ -130,7 +148,7 @@ pub fn run() {
                 .add_migrations("sqlite:proofs.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![capture_selection, select_all_and_capture, replace_selection]);
+        .invoke_handler(tauri::generate_handler![capture_selection, select_all_and_capture, replace_selection, check_accessibility_permission]);
 
     builder
         .setup(|app| {

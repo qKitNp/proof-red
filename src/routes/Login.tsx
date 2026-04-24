@@ -10,10 +10,13 @@ export function Login() {
     setLoading(true);
     setError(null);
     try {
+      const redirectUrl = import.meta.env.DEV
+        ? "http://localhost:1420/callback"
+        : "proofred://auth/callback";
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "proofred://auth/callback",
+          redirectTo: redirectUrl,
           skipBrowserRedirect: true,
         },
       });

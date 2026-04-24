@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { startCheckout, openPortal, type Plan } from "../lib/billing";
+import { ONBOARDING_FLAG } from "./Onboarding";
 
 export function Settings() {
   const [autostart, setAutostart] = useState(true);
@@ -51,6 +52,20 @@ export function Settings() {
 
       <Section title="Custom dictionary">
         <CustomDictionary />
+      </Section>
+
+      <Section title="Help">
+        <Row label="Replay onboarding">
+          <button
+            onClick={() => {
+              localStorage.removeItem(ONBOARDING_FLAG);
+              window.location.reload();
+            }}
+            className="text-[12.5px] px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--sidebar)] cursor-pointer"
+          >
+            Show again
+          </button>
+        </Row>
       </Section>
     </div>
   );
