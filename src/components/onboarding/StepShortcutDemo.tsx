@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { listen } from "@tauri-apps/api/event";
 import { Check } from "lucide-react";
+import { Keyboard } from "@/components/ui/keyboard";
 
 const SAMPLE = "their going too the stor tommorow to by som bred.";
 
@@ -10,6 +11,8 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
   const [proofing, setProofing] = useState(false);
   const [done, setDone] = useState(false);
   const ref = useRef<HTMLTextAreaElement | null>(null);
+  const keyboardWrapRef = useRef<HTMLDivElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     ref.current?.focus();
@@ -24,6 +27,77 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
       unlisten.then((fn) => fn());
     };
   }, []);
+
+  useEffect(() => {
+    const wrap = keyboardWrapRef.current;
+    if (!wrap) return;
+    const viewport = wrap.parentElement;
+    if (!viewport) return;
+
+    let raf = 0;
+    let ro: ResizeObserver | null = null;
+    let mo: MutationObserver | null = null;
+    let cancelled = false;
+
+    const setup = (el: HTMLElement) => {
+      const inner = el.querySelector<HTMLElement>(":scope > div");
+      const target = inner ?? el;
+      const cleared = proofing || done;
+
+      target.style.boxShadow = cleared
+        ? ""
+        : "0 0 0 3px var(--accent), 0 0 28px 6px var(--accent)";
+      target.style.borderRadius = "6px";
+      target.style.transition = "box-shadow 300ms ease";
+      if (!cleared && !reduceMotion) target.classList.add("animate-pulse");
+      else target.classList.remove("animate-pulse");
+
+      const position = () => {
+        const vRect = viewport.getBoundingClientRect();
+        const kRect = el.getBoundingClientRect();
+        const wRect = wrap.getBoundingClientRect();
+        if (kRect.width === 0) return;
+        const keyCenterX = kRect.left - wRect.left + kRect.width / 2;
+        const keyCenterY = kRect.top - wRect.top + kRect.height / 2;
+        wrap.style.left = `${vRect.width * 0.55 - keyCenterX}px`;
+        wrap.style.top = `${vRect.height / 2 - keyCenterY}px`;
+      };
+      position();
+      ro = new ResizeObserver(position);
+      ro.observe(viewport);
+      ro.observe(wrap);
+      ro.observe(el);
+      window.addEventListener("resize", position);
+      return position;
+    };
+
+    let onResize: (() => void) | null = null;
+
+    const tryFind = () => {
+      if (cancelled) return;
+      const el = wrap.querySelector<HTMLElement>('[aria-label="ShiftRight"]');
+      if (el && el.getBoundingClientRect().width > 0) {
+        onResize = setup(el);
+        return;
+      }
+      raf = requestAnimationFrame(tryFind);
+    };
+    tryFind();
+
+    mo = new MutationObserver(() => {
+      if (ro) return;
+      tryFind();
+    });
+    mo.observe(wrap, { childList: true, subtree: true });
+
+    return () => {
+      cancelled = true;
+      if (raf) cancelAnimationFrame(raf);
+      ro?.disconnect();
+      mo?.disconnect();
+      if (onResize) window.removeEventListener("resize", onResize);
+    };
+  }, [proofing, done, reduceMotion]);
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const next = e.target.value;
@@ -40,16 +114,30 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -24 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col items-center text-center gap-7"
+      className="flex flex-col items-center text-center gap-4"
     >
       <div>
         <h1 className="text-[26px] font-medium tracking-tight leading-tight">
           Try the shortcut
         </h1>
         <p className="mt-3 text-[13.5px] text-[var(--text-soft)] leading-relaxed max-w-[440px] mx-auto">
-          Select the sentence below, then double-tap{" "}
-          <Kbd>⇧</Kbd> Right Shift. proof·red will rewrite it in place.
+          Select the sentence below, then double-tap Right Shift. proof·red
+          will rewrite it in place.
         </p>
+      </div>
+
+      <div
+        className="relative rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm pointer-events-none select-none overflow-hidden mx-auto"
+        style={{ width: 420, height: 180 }}
+        aria-hidden="true"
+      >
+        <div
+          ref={keyboardWrapRef}
+          className="absolute"
+          style={{ top: 0, left: 0 }}
+        >
+          <Keyboard theme="classic" enableHaptics={false} enableSound={false} />
+        </div>
       </div>
 
       <textarea
@@ -84,20 +172,7 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
               <span className="inline-block h-[8px] w-[8px] rounded-full bg-[var(--accent)] animate-pulse" />
               <span>Proofreading…</span>
             </motion.div>
-          ) : (
-            <motion.div
-              key="hint"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-2 text-[12px] text-[var(--text-faint)]"
-            >
-              <Kbd>⇧</Kbd>
-              <span>then</span>
-              <Kbd>⇧</Kbd>
-              <span className="ml-1">within 300ms</span>
-            </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
 
@@ -108,13 +183,5 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
         {done ? "Finish" : "I'll try later"}
       </button>
     </motion.div>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="inline-flex items-center justify-center min-w-[22px] h-[20px] px-1.5 font-mono text-[11px] text-[var(--text)] bg-[var(--bg)] border border-[var(--border)] rounded">
-      {children}
-    </kbd>
   );
 }
