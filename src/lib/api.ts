@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { getLicenseKey } from "./license";
 
 const BASE_URL = import.meta.env.VITE_PROOFREAD_BASE_URL as string | undefined;
 
@@ -12,13 +12,13 @@ type ProofreadResponse = { proofread_text: string };
 
 export async function proofread(req: ProofreadRequest): Promise<{ corrected: string }> {
   if (!BASE_URL) throw new Error("VITE_PROOFREAD_BASE_URL not set");
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token;
+  const licenseKey = getLicenseKey();
+  if (!licenseKey) throw new Error("Missing license key — re-run onboarding");
   const res = await fetch(`${BASE_URL}/proofread`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-License-Key": licenseKey,
     },
     body: JSON.stringify({
       app_name: req.appName,

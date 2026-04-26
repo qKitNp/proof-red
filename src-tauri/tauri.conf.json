@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "proof-red",
+  "productName": "grammar.lol",
   "version": "0.1.0",
   "identifier": "com.kitn.proof-red",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "proof-red",
+        "title": "grammar.lol",
         "width": 800,
         "height": 600
       },

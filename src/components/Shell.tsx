@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { BookMarked, Settings as SettingsIcon, User, HelpCircle, LogOut } from "lucide-react";
+import { BookMarked, Settings as SettingsIcon, User, HelpCircle } from "lucide-react";
 import { useUI, type Route } from "../lib/store";
-import { useAuth } from "../lib/auth";
 import { Home as HomeIcon } from "lucide-react";
 
 type NavItem = { key: Route; label: string; Icon: typeof HomeIcon };
@@ -14,7 +13,6 @@ const nav: NavItem[] = [
 
 export function Shell({ children, onRedoOnboarding }: { children: ReactNode; onRedoOnboarding?: () => void }) {
   const { route, setRoute } = useUI();
-  const { user, isPro, signOut } = useAuth();
 
   return (
     <div className="h-full grid grid-cols-[240px_1fr] text-[var(--text)]">
@@ -22,11 +20,8 @@ export function Shell({ children, onRedoOnboarding }: { children: ReactNode; onR
         <div>
           <div className="flex items-center gap-2 px-2 mb-7">
             <div className="text-[17px] font-semibold tracking-tight">
-              proof<span className="text-[var(--accent)]">·</span>red
+              grammar<span className="text-[var(--accent)]">.</span>lol
             </div>
-            <span className="text-[10.5px] px-2 py-[2px] rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)]">
-              {isPro ? "Pro" : "Basic"}
-            </span>
           </div>
 
           <nav className="flex flex-col gap-[2px]">
@@ -59,20 +54,6 @@ export function Shell({ children, onRedoOnboarding }: { children: ReactNode; onR
             <span>Redo Onboarding</span>
           </button>
           <SidebarFoot Icon={HelpCircle} label="Help" />
-          {user && (
-            <div className="mt-2 pt-2 border-t border-[var(--border)]">
-              <div className="px-3 py-1 text-[11.5px] text-[var(--text-faint)] truncate">
-                {user.user_metadata?.full_name ?? user.email}
-              </div>
-              <button
-                onClick={signOut}
-                className="w-full flex items-center gap-3 px-3 py-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer"
-              >
-                <LogOut size={14} strokeWidth={1.75} />
-                <span>Sign out</span>
-              </button>
-            </div>
-          )}
         </div>
       </aside>
 

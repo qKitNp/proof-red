@@ -9,7 +9,7 @@ export function StepWelcome({ onNext }: { onNext: () => void }) {
       className="flex flex-col items-center text-center gap-8"
     >
       <div className="text-[36px] font-semibold tracking-tight leading-none">
-        proof<span className="text-[var(--accent)]">·</span>red
+        grammar<span className="text-[var(--accent)]">.</span>lol
       </div>
       <div>
         <h1 className="text-[32px] font-medium tracking-tight leading-tight">

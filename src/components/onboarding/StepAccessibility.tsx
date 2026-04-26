@@ -51,7 +51,7 @@ export function StepAccessibility({ onNext }: { onNext: () => void }) {
           Enable Accessibility
         </h1>
         <p className="mt-3 text-[13.5px] text-[var(--text-soft)] leading-relaxed max-w-[440px] mx-auto">
-          proof·red needs Accessibility access to watch for the Right Shift
+          grammar.lol needs Accessibility access to watch for the Right Shift
           shortcut. It never reads what you type — only the moment you
           double-tap.
         </p>
@@ -91,7 +91,7 @@ export function StepAccessibility({ onNext }: { onNext: () => void }) {
         {openFailed && (
           <p className="text-[11.5px] text-[var(--text-soft)] leading-snug">
             Could not open System Settings. Open Privacy & Security →
-            Accessibility and enable proof·red manually.
+            Accessibility and enable grammar.lol manually.
           </p>
         )}
         <button

@@ -139,7 +139,7 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
           Double Tap Right Shift Key
         </h1>
         <p className="text-[13.5px] text-[var(--text-soft)] leading-relaxed max-w-[440px]">
-          Select the sentence below to get started — proof·red will rewrite it in place.
+          Select the sentence below to get started — grammar.lol will rewrite it in place.
         </p>
       </div>
 

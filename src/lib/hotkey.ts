@@ -58,7 +58,7 @@ export async function registerHotkey(): Promise<() => void> {
       tone: "error",
       title: "Accessibility permission needed",
       description:
-        "proof·red needs Accessibility access to detect the double-tap Right Shift shortcut. Open System Settings -> Privacy & Security -> Accessibility and enable proof·red, then restart the app.",
+        "grammar.lol needs Accessibility access to detect the double-tap Right Shift shortcut. Open System Settings -> Privacy & Security -> Accessibility and enable grammar.lol, then restart the app.",
       durationMs: 0,
     });
   });

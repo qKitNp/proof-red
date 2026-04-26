@@ -3,15 +3,13 @@ import { AnimatePresence } from "motion/react";
 import { OnboardingShell } from "../components/onboarding/OnboardingShell";
 import { StepWelcome } from "../components/onboarding/StepWelcome";
 import { StepAccessibility } from "../components/onboarding/StepAccessibility";
-import { StepLogin } from "../components/onboarding/StepLogin";
+import { StepLicenseKey } from "../components/onboarding/StepLicenseKey";
 import { StepShortcutDemo } from "../components/onboarding/StepShortcutDemo";
 
-const STEPS = (import.meta.env.DEV
-  ? ["welcome", "accessibility", "demo"]
-  : ["welcome", "accessibility", "login", "demo"]) as unknown as readonly ["welcome", "accessibility", "login", "demo"];
+const STEPS = ["welcome", "accessibility", "license", "demo"] as const;
 type StepId = (typeof STEPS)[number];
 
-export const ONBOARDING_FLAG = "proofred:onboarded";
+export const ONBOARDING_FLAG = "grammarlol:onboarded";
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState<StepId>("welcome");
@@ -29,13 +27,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
           <StepWelcome key="welcome" onNext={() => setStep("accessibility")} />
         )}
         {step === "accessibility" && (
-          <StepAccessibility
-            key="accessibility"
-            onNext={() => setStep(import.meta.env.DEV ? "demo" : "login")}
-          />
+          <StepAccessibility key="accessibility" onNext={() => setStep("license")} />
         )}
-        {step === "login" && (
-          <StepLogin key="login" onNext={() => setStep("demo")} />
+        {step === "license" && (
+          <StepLicenseKey key="license" onNext={() => setStep("demo")} />
         )}
         {step === "demo" && (
           <StepShortcutDemo key="demo" onFinish={finish} />
