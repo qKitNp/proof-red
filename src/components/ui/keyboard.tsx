@@ -181,7 +181,7 @@ function KeyboardProvider({
   }, [enableSound, soundUrl]);
 
   const playSound = useCallback(
-    (phase: KeyboardEventPhase, keyCode: string) => {
+    async (phase: KeyboardEventPhase, keyCode: string) => {
       if (!enableSound) {
         return;
       }
@@ -201,7 +201,7 @@ function KeyboardProvider({
       const [startMs, durationMs] = soundDef;
 
       if (audioContext.state === "suspended") {
-        void audioContext.resume();
+        await audioContext.resume();
       }
 
       const source = audioContext.createBufferSource();
@@ -241,7 +241,7 @@ function KeyboardProvider({
       setPressedKeys(next);
 
       setLastPressedKey(keyCode);
-      playSound("down", keyCode);
+      void playSound("down", keyCode);
       emitKeyEvent("down", keyCode, source);
     },
     [emitKeyEvent, playSound],
@@ -258,7 +258,7 @@ function KeyboardProvider({
       pressedKeysRef.current = next;
       setPressedKeys(next);
 
-      playSound("up", keyCode);
+      void playSound("up", keyCode);
       emitKeyEvent("up", keyCode, source);
     },
     [emitKeyEvent, playSound],
@@ -873,7 +873,6 @@ const CLASSIC_DARK_KEYS: KEYCODE[] = [
   KEYCODE.Enter,
   KEYCODE.Home,
   KEYCODE.ShiftLeft,
-  KEYCODE.ShiftRight,
   KEYCODE.End,
   KEYCODE.ControlLeft,
   KEYCODE.AltLeft,
@@ -918,7 +917,7 @@ const KEYBOARD_THEMES: Record<KeyboardThemeName, KeyboardThemeDefinition> = {
       light: { bg: "#F5F5F5", text: "rgba(0,0,0,0.7)" },
     },
     keyVariantOverrides: buildKeyVariantOverrides({
-      accent: [KEYCODE.Escape],
+      accent: [KEYCODE.Escape, KEYCODE.ShiftRight],
       dark: CLASSIC_DARK_KEYS,
     }),
   },

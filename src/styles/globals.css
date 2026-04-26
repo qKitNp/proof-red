@@ -56,4 +56,12 @@
   body.overlay-window #root {
     background: transparent !important;
   }
+
+  @keyframes keyHintClick {
+    0%, 100% { transform: scale(1); }
+    10% { transform: scale(0.92); }
+    20%, 50% { transform: scale(1); }
+    60% { transform: scale(0.92); }
+    70% { transform: scale(1); }
+  }
 }

@@ -101,7 +101,7 @@ export default function App() {
 
   return (
     <>
-      <Shell>
+      <Shell onRedoOnboarding={() => { localStorage.removeItem(ONBOARDING_FLAG); setOnboarded(false); }}>
         {route === "home" && <Home />}
         {route === "settings" && <Settings />}
         {route === "account" && <Account />}

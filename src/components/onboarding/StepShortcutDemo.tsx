@@ -28,6 +28,26 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
     };
   }, []);
 
+  // After proofing starts, poll the textarea DOM for the OS-level paste
+  // (enigo Cmd+V) and sync it into React state so the controlled input
+  // doesn't fight the DOM value.
+  useEffect(() => {
+    if (!proofing) return;
+    const el = ref.current;
+    if (!el) return;
+
+    const iv = setInterval(() => {
+      const dom = el.value;
+      if (dom && dom !== SAMPLE && dom !== text) {
+        setText(dom);
+        setProofing(false);
+        setDone(true);
+      }
+    }, 100);
+
+    return () => clearInterval(iv);
+  }, [proofing, text]);
+
   useEffect(() => {
     const wrap = keyboardWrapRef.current;
     if (!wrap) return;
@@ -44,13 +64,11 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
       const target = inner ?? el;
       const cleared = proofing || done;
 
-      target.style.boxShadow = cleared
-        ? ""
-        : "0 0 0 3px var(--accent), 0 0 28px 6px var(--accent)";
-      target.style.borderRadius = "6px";
-      target.style.transition = "box-shadow 300ms ease";
-      if (!cleared && !reduceMotion) target.classList.add("animate-pulse");
-      else target.classList.remove("animate-pulse");
+      if (!cleared && !reduceMotion) {
+        target.style.animation = "keyHintClick 2s ease-in-out infinite";
+      } else {
+        target.style.animation = "";
+      }
 
       const position = () => {
         const vRect = viewport.getBoundingClientRect();
@@ -116,13 +134,12 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col items-center text-center gap-4"
     >
-      <div>
+      <div className="flex flex-col items-center gap-2">
         <h1 className="text-[26px] font-medium tracking-tight leading-tight">
-          Try the shortcut
+          Double Tap Right Shift Key
         </h1>
-        <p className="mt-3 text-[13.5px] text-[var(--text-soft)] leading-relaxed max-w-[440px] mx-auto">
-          Select the sentence below, then double-tap Right Shift. proof·red
-          will rewrite it in place.
+        <p className="text-[13.5px] text-[var(--text-soft)] leading-relaxed max-w-[440px]">
+          Select the sentence below to get started — proof·red will rewrite it in place.
         </p>
       </div>
 
@@ -136,7 +153,7 @@ export function StepShortcutDemo({ onFinish }: { onFinish: () => void }) {
           className="absolute"
           style={{ top: 0, left: 0 }}
         >
-          <Keyboard theme="classic" enableHaptics={false} enableSound={false} />
+          <Keyboard theme="classic" enableHaptics={false} />
         </div>
       </div>
 

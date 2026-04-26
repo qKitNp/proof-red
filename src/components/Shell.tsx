@@ -1,14 +1,8 @@
 import type { ReactNode } from "react";
-import {
-  Home as HomeIcon,
-  BookMarked,
-  Settings as SettingsIcon,
-  User,
-  HelpCircle,
-  LogOut,
-} from "lucide-react";
+import { BookMarked, Settings as SettingsIcon, User, HelpCircle, LogOut } from "lucide-react";
 import { useUI, type Route } from "../lib/store";
 import { useAuth } from "../lib/auth";
+import { Home as HomeIcon } from "lucide-react";
 
 type NavItem = { key: Route; label: string; Icon: typeof HomeIcon };
 
@@ -18,7 +12,7 @@ const nav: NavItem[] = [
   { key: "account", label: "Account", Icon: User },
 ];
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, onRedoOnboarding }: { children: ReactNode; onRedoOnboarding?: () => void }) {
   const { route, setRoute } = useUI();
   const { user, isPro, signOut } = useAuth();
 
@@ -57,7 +51,13 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex flex-col gap-[2px]">
-          <SidebarFoot Icon={BookMarked} label="Shortcut  ⇧⇧ (double-tap Right Shift)" />
+          <button
+            onClick={onRedoOnboarding}
+            className="flex items-center gap-3 px-3 py-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)] rounded-md hover:bg-[var(--surface)]/60 transition-colors cursor-pointer"
+          >
+            <BookMarked size={15} strokeWidth={1.75} />
+            <span>Redo Onboarding</span>
+          </button>
           <SidebarFoot Icon={HelpCircle} label="Help" />
           {user && (
             <div className="mt-2 pt-2 border-t border-[var(--border)]">

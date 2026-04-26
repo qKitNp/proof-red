@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Check, Shield } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   checkAccessibility,
   openAccessibilitySettings,
@@ -46,10 +46,6 @@ export function StepAccessibility({ onNext }: { onNext: () => void }) {
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col items-center text-center gap-8"
     >
-      <div className="h-14 w-14 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
-        <Shield size={24} strokeWidth={1.5} className="text-[var(--accent)]" />
-      </div>
-
       <div>
         <h1 className="text-[26px] font-medium tracking-tight leading-tight">
           Enable Accessibility
