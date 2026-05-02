@@ -1,5 +1,10 @@
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
-use tauri::{Manager, PhysicalPosition};
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::TrayIconBuilder,
+    Manager, PhysicalPosition,
+};
+use tauri_plugin_autostart::{ManagerExt, MacosLauncher};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -99,6 +104,20 @@ fn check_accessibility_permission() -> bool {
 }
 
 #[tauri::command]
+fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn replace_selection(app: tauri::AppHandle, text: String) -> Result<(), String> {
     let clip = app.clipboard();
     let prev = clip.read_text().ok();
@@ -143,15 +162,81 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:proofs.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![capture_selection, select_all_and_capture, replace_selection, check_accessibility_permission]);
+        .invoke_handler(tauri::generate_handler![
+            capture_selection,
+            select_all_and_capture,
+            replace_selection,
+            check_accessibility_permission,
+            show_main_window
+        ]);
 
     builder
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            }
+
+            let autostart = app.autolaunch();
+            let marker = app
+                .path()
+                .app_config_dir()
+                .ok()
+                .map(|d| d.join(".autostart-initialized"));
+            if let Some(ref m) = marker {
+                if !m.exists() {
+                    if let Some(parent) = m.parent() {
+                        let _ = std::fs::create_dir_all(parent);
+                    }
+                    let _ = autostart.enable();
+                    let _ = std::fs::write(m, b"1");
+                }
+            }
+
+            let open_item = MenuItemBuilder::with_id("open", "Open grammar.lol").build(app)?;
+            let toggle_label = if autostart.is_enabled().unwrap_or(false) {
+                "Disable launch at login"
+            } else {
+                "Enable launch at login"
+            };
+            let toggle_item = MenuItemBuilder::with_id("toggle_autostart", toggle_label).build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let menu = MenuBuilder::new(app)
+                .items(&[&open_item, &toggle_item, &quit_item])
+                .build()?;
+
+            let _tray = TrayIconBuilder::with_id("main-tray")
+                .menu(&menu)
+                .tooltip("grammar.lol")
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "open" => {
+                        let _ = show_main_window(app.clone());
+                    }
+                    "toggle_autostart" => {
+                        let a = app.autolaunch();
+                        if a.is_enabled().unwrap_or(false) {
+                            let _ = a.disable();
+                        } else {
+                            let _ = a.enable();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
             doubletap::start(app.handle().clone());
             if let Some(overlay) = app.get_webview_window("overlay") {
                 if let Ok(Some(monitor)) = overlay.current_monitor() {
@@ -165,6 +250,20 @@ pub fn run() {
                 }
             }
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    #[cfg(target_os = "macos")]
+                    {
+                        let _ = window
+                            .app_handle()
+                            .set_activation_policy(tauri::ActivationPolicy::Accessory);
+                    }
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
