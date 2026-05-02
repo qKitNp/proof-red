@@ -5,7 +5,7 @@
 //! "doubletap-rshift" to the frontend when Right Shift is tapped twice within
 //! DOUBLE_TAP_WINDOW_MS with no intervening keyboard or mouse activity.
 
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 
 const DOUBLE_TAP_WINDOW_MS: u128 = 300;
 const PERMISSION_TOAST_EVENT: &str = "doubletap-permission-missing";
@@ -87,6 +87,7 @@ mod imp {
                                         <= DOUBLE_TAP_WINDOW_MS
                         );
                         if fired {
+                            app_for_cb.state::<crate::sound::SoundHandle>().play_click();
                             let _ = app_for_cb.emit(TRIGGER_EVENT, ());
                             s.last_rshift_down = None;
                         } else {
@@ -175,6 +176,7 @@ mod imp {
                                 && now.duration_since(prev).as_millis() <= DOUBLE_TAP_WINDOW_MS
                     );
                     if fired {
+                        app_for_cb.state::<crate::sound::SoundHandle>().play_click();
                         let _ = app_for_cb.emit(TRIGGER_EVENT, ());
                         s.last_rshift_down = None;
                     } else {

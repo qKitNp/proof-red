@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Shell } from "./components/Shell";
 import { Toasts } from "./components/Toasts";
 import { ProcessingSpinner } from "./components/ProcessingSpinner";
@@ -17,6 +18,10 @@ export default function App() {
   const [onboarded, setOnboarded] = useState(
     () => localStorage.getItem(ONBOARDING_FLAG) === "1"
   );
+
+  useEffect(() => {
+    invoke("set_onboarding_complete", { complete: onboarded }).catch(() => {});
+  }, [onboarded]);
 
   useEffect(() => {
     if (!onboarded) return;

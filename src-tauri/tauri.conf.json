@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "grammar.lol",
+  "productName": "grammarlol",
   "version": "0.1.0",
   "identifier": "com.kitn.proof-red",
   "build": {
@@ -13,10 +13,10 @@
     "windows": [
       {
         "label": "main",
-        "title": "grammar.lol",
+        "title": "grammarlol",
         "width": 800,
         "height": 600,
-        "visible": false
+        "visible": true
       },
       {
         "label": "overlay",

@@ -20,3 +20,19 @@ export async function openAccessibilitySettings(): Promise<boolean> {
     return false;
   }
 }
+
+export async function checkLaunchAtLogin(): Promise<boolean> {
+  try {
+    return await invoke<boolean>("check_launch_at_login");
+  } catch {
+    return false;
+  }
+}
+
+export async function enableLaunchAtLogin(): Promise<boolean> {
+  try {
+    return await invoke<boolean>("enable_launch_at_login");
+  } catch {
+    return false;
+  }
+}

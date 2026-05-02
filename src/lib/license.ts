@@ -16,9 +16,16 @@ export function clearLicenseKey(): void {
 
 export async function validateLicenseKey(key: string): Promise<void> {
   if (!BASE_URL) throw new Error("VITE_PROOFREAD_BASE_URL not set");
-  const res = await fetch(`${BASE_URL}/validate-license`, {
+  const res = await fetch(`${BASE_URL}/proofread`, {
     method: "POST",
-    headers: { "X-License-Key": key },
+    headers: {
+      "Content-Type": "application/json",
+      "X-License-Key": key,
+    },
+    body: JSON.stringify({
+      app_name: "onboarding-license-check",
+      to_proofread: "license verification probe",
+    }),
   });
   if (!res.ok) {
     throw new Error(`Invalid license key (${res.status})`);

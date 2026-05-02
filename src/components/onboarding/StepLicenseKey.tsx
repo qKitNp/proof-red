@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { setLicenseKey, validateLicenseKey } from "../../lib/license";
 
+const LICENSE_KEY_PATTERN = /^[A-Za-z0-9]{6}$/;
+
 export function StepLicenseKey({ onNext }: { onNext: () => void }) {
   const [key, setKey] = useState("");
   const [loading, setLoading] = useState(false);
@@ -10,7 +12,10 @@ export function StepLicenseKey({ onNext }: { onNext: () => void }) {
 
   async function handleContinue() {
     const trimmed = key.trim();
-    if (!trimmed) return;
+    if (!LICENSE_KEY_PATTERN.test(trimmed)) {
+      setError("Enter a valid 6-character alphanumeric key.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -50,19 +55,25 @@ export function StepLicenseKey({ onNext }: { onNext: () => void }) {
 
       <input
         value={key}
-        onChange={(e) => setKey(e.target.value)}
+        onChange={(e) => {
+          const sanitized = e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6);
+          setKey(sanitized);
+          if (error) setError(null);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") handleContinue();
         }}
-        placeholder="grm_••••••••••••••••"
+        placeholder="ABC123"
+        maxLength={6}
+        inputMode="text"
         autoFocus
         spellCheck={false}
-        className="w-full max-w-[360px] px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[13.5px] font-mono text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
+        className="w-full max-w-[360px] px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[13.5px] font-mono text-[var(--text)] text-center placeholder:text-[var(--text-faint)] placeholder:text-center outline-none focus:border-[var(--accent)] transition-colors"
       />
 
       <button
         onClick={handleContinue}
-        disabled={loading || !key.trim()}
+        disabled={loading || !LICENSE_KEY_PATTERN.test(key.trim())}
         className="px-6 py-2.5 rounded-lg bg-[var(--accent)] text-white text-[13.5px] font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Checking…" : "Continue"}

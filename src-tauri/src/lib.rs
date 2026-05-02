@@ -2,13 +2,16 @@ use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
-    Manager, PhysicalPosition,
+    Manager, PhysicalPosition, State,
 };
 use tauri_plugin_autostart::{ManagerExt, MacosLauncher};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 mod doubletap;
+mod sound;
+
+struct OnboardingState(std::sync::atomic::AtomicBool);
 
 #[derive(serde::Serialize)]
 pub struct Capture {
@@ -104,6 +107,25 @@ fn check_accessibility_permission() -> bool {
 }
 
 #[tauri::command]
+fn check_launch_at_login(app: tauri::AppHandle) -> bool {
+    app.autolaunch().is_enabled().unwrap_or(false)
+}
+
+#[tauri::command]
+fn enable_launch_at_login(app: tauri::AppHandle) -> bool {
+    let autostart = app.autolaunch();
+    let _ = autostart.enable();
+    autostart.is_enabled().unwrap_or(false)
+}
+
+#[tauri::command]
+fn set_onboarding_complete(state: State<'_, OnboardingState>, complete: bool) {
+    state
+        .0
+        .store(complete, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[tauri::command]
 fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -171,11 +193,16 @@ pub fn run() {
                 .add_migrations("sqlite:proofs.db", migrations)
                 .build(),
         )
+        .manage(sound::SoundHandle::new())
+        .manage(OnboardingState(std::sync::atomic::AtomicBool::new(false)))
         .invoke_handler(tauri::generate_handler![
             capture_selection,
             select_all_and_capture,
             replace_selection,
             check_accessibility_permission,
+            check_launch_at_login,
+            enable_launch_at_login,
+            set_onboarding_complete,
             show_main_window
         ]);
 
@@ -183,7 +210,7 @@ pub fn run() {
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
-                let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
             }
 
             let autostart = app.autolaunch();
@@ -202,7 +229,7 @@ pub fn run() {
                 }
             }
 
-            let open_item = MenuItemBuilder::with_id("open", "Open grammar.lol").build(app)?;
+            let open_item = MenuItemBuilder::with_id("open", "Open grammarlol").build(app)?;
             let toggle_label = if autostart.is_enabled().unwrap_or(false) {
                 "Disable launch at login"
             } else {
@@ -216,7 +243,7 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .menu(&menu)
-                .tooltip("grammar.lol")
+                .tooltip("grammarlol")
                 .icon(app.default_window_icon().unwrap().clone())
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "open" => {
@@ -255,12 +282,25 @@ pub fn run() {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
-                    let _ = window.hide();
+                    let onboarding_complete = window
+                        .state::<OnboardingState>()
+                        .0
+                        .load(std::sync::atomic::Ordering::Relaxed);
+                    if onboarding_complete {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.unminimize();
+                        let _ = window.set_focus();
+                    }
                     #[cfg(target_os = "macos")]
                     {
-                        let _ = window
-                            .app_handle()
-                            .set_activation_policy(tauri::ActivationPolicy::Accessory);
+                        let policy = if onboarding_complete {
+                            tauri::ActivationPolicy::Accessory
+                        } else {
+                            tauri::ActivationPolicy::Regular
+                        };
+                        let _ = window.app_handle().set_activation_policy(policy);
                     }
                 }
             }
